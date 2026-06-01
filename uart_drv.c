@@ -67,6 +67,31 @@ void uart_send_string(const char *str)
     }
 }
 
+void uart_send_uint(uint16_t value)
+{
+    char tmp[5]; // 16-bit value is at most 5 digits (65535)
+    int i = 0;
+
+    if (value == 0)
+    {
+        uart_send_char('0');
+        return;
+    }
+
+    while (value > 0) // build digits least-significant first
+    {
+        tmp[i] = (char)('0' + (value % 10U));
+        value /= 10U;
+        i++;
+    }
+
+    while (i > 0) // then send them reversed
+    {
+        i--;
+        uart_send_char(tmp[i]);
+    }
+}
+
 char uart_receive_char(void)
 {
     while (!uart_rx_ready())
