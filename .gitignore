@@ -1,0 +1,38 @@
+# Code Composer Studio / Eclipse build output
+/Debug/
+/Release/
+*.obj
+*.o
+*.out
+*.map
+*.lst
+*.d
+*.opt
+*.rov.xml
+*.hex
+*.bin
+
+# CCS / Eclipse generated metadata
+.metadata/
+RemoteSystemsTempFiles/
+.launches/
+*.launch
+
+# CCS auto-generated managed-build files
+makefile
+*.mk
+objects.mk
+sources.mk
+subdir_rules.mk
+subdir_vars.mk
+ccsObjs.opt
+
+# CCS workspace / user-specific settings
+*.bak
+*.tmp
+*~
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
