@@ -2,6 +2,7 @@
 #define QUEUE_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     volatile uint8_t *data;
@@ -12,15 +13,15 @@ typedef struct {
 
 void queue_init(Queue *q, volatile uint8_t *data, uint8_t capacity);
 
-// Returns 1 on success, 0 if full (byte is dropped).
-int queue_push(Queue *q, uint8_t byte);
+// Returns true on success, false if full (byte is dropped).
+bool queue_push(Queue *q, uint8_t byte);
 
-// Reads the front byte into *out without removing it. Returns 1 on success, 0 if empty.
-int queue_peek(const Queue *q, uint8_t *out);
+// Reads the front byte into *out without removing it. Returns true on success, false if empty.
+bool queue_peek(const Queue *q, uint8_t *out);
 
-// Removes the front byte. Returns 1 on success, 0 if empty.
-int queue_pop(Queue *q);
+// Removes the front byte. Returns true on success, false if empty.
+bool queue_pop(Queue *q);
 
-int queue_empty(const Queue *q);
+bool queue_empty(const Queue *q);
 
 #endif /* QUEUE_H_ */

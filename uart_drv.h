@@ -3,6 +3,7 @@
 
 #include "msp.h"
 #include "stdint.h"
+#include "stdbool.h"
 #include "sys_config.h"
 
 // Configure pins, clock source and eUSCI_A0 for UART 8-N-1 at baudrate (polling).
@@ -20,7 +21,7 @@ char uart_receive_char(void);
 // Read one byte from RXBUF without blocking; call only after uart_rx_ready() returns true.
 char uart_get_rx_byte(void);
 
-int uart_tx_ready(void);
-int uart_rx_ready(void);
+bool uart_tx_ready(void);
+bool uart_rx_ready(void);
 
 #endif /* UART_DRV_H_ */

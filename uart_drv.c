@@ -40,12 +40,12 @@ void uart_enable_rx_interrupt(void)
     NVIC_EnableIRQ(EUSCIA0_IRQn);
 }
 
-int uart_tx_ready(void)
+bool uart_tx_ready(void)
 {
     return (EUSCI_A0->IFG & EUSCI_A_IFG_TXIFG) != 0; // UCTXIFG: TXBUF empty
 }
 
-int uart_rx_ready(void)
+bool uart_rx_ready(void)
 {
     return (EUSCI_A0->IFG & EUSCI_A_IFG_RXIFG) != 0; // UCRXIFG: byte in RXBUF
 }

@@ -9,7 +9,7 @@ static Queue s_rx;
 // Line being assembled, owned by the main loop.
 static char s_buf[CLI_BUFFER_SIZE];
 static uint8_t s_len;
-static int s_ready;
+static bool s_ready;
 
 void cli_init(void)
 {
@@ -21,7 +21,7 @@ void cli_rx_byte(char c)
     queue_push(&s_rx, (uint8_t)c);
 }
 
-int cli_poll(void)
+bool cli_poll(void)
 {
     uint8_t byte;
     while (!s_ready && queue_peek(&s_rx, &byte))
@@ -34,7 +34,7 @@ int cli_poll(void)
                 continue; // skip empty lines (e.g. the LF of a CR+LF pair)
             uart_send_string("\r\n");
             s_buf[s_len] = '\0';
-            s_ready = 1;
+            s_ready = true;
         }
         else
         {
@@ -54,5 +54,5 @@ const char *cli_get_line(void)
 void cli_clear(void)
 {
     s_len = 0;
-    s_ready = 0;
+    s_ready = false;
 }
