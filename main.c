@@ -3,6 +3,9 @@
 #include "uart_drv.h"
 #include "cli.h"
 #include "config.h"
+#include "timer_drv.h"
+#include "ac_drv.h"
+#include <stdlib.h>
 
 void main(void)
 {
@@ -10,9 +13,12 @@ void main(void)
 
     CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_12);
 
-    uart_init();
+    uart_init(19200);
     config_init();
+    ac_init();
+    timer_init(TIMER_1, 10000); // 10s
     uart_enable_rx_interrupt();
+    timer_enable_interrupt(TIMER_1);
 
     uart_send_string("System ready\r\n");
 
@@ -30,7 +36,31 @@ void EUSCIA0_IRQHandler(void)
 {
     if (uart_rx_ready())
     {
-        char c = (char)EUSCI_A0->RXBUF; // read the received byte (clears UCRXIFG)
-        cli_rx_byte(c);
+        cli_rx_byte(uart_get_rx_byte());
+    }
+}
+
+void T32_INT1_IRQHandler(void)
+{
+    timer_clear_interrupt(TIMER_1);
+
+    // TODO: Get temperature
+    int temp = rand() % 41; // 0 - 40
+    int max_temp = config_get_temp_max();
+
+	// TODO: Get luminosity
+
+    // Debug
+    uart_send_string("Temp: ");
+    uart_send_uint((uint16_t)temp);
+    uart_send_string("C\r\n");
+
+    if (temp <= max_temp && ac_is_on())
+    {
+        ac_off();
+    }
+    else if (temp > max_temp && !ac_is_on())
+    {
+        ac_on();
     }
 }

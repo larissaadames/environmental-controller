@@ -2,8 +2,10 @@
 
 #define UART_PIN_MASK (BIT2 | BIT3) // P1.2 = UCA0RXD, P1.3 = UCA0TXD
 
-void uart_init(void)
+void uart_init(uint32_t baudrate)
 {
+    uint32_t n = SMCLK_HZ / baudrate; // N = f_BRCLK / baud
+
     // Select the UART function on pins P1.2 and P1.3 ([DS]: SEL1:SEL0 = 0:1).
     P1->SEL0 |= UART_PIN_MASK;  // SEL0 = 1 on pins P1.2 and P1.3
     P1->SEL1 &= ~UART_PIN_MASK; // SEL1 = 0 on pins P1.2 and P1.3
@@ -14,14 +16,13 @@ void uart_init(void)
     // Frame format + clock source. The 8-N-1 async defaults are all 0, so we
     // only set the clock source and keep the reset bit:
     //   UCPEN=0 no parity | UC7BIT=0 8 bits | UCSPB=0 1 stop | UCSYNC=0 async
-    EUSCI_A0->CTLW0 = EUSCI_A_CTLW0_SSEL__SMCLK // BRCLK = SMCLK (12 MHz)
+    EUSCI_A0->CTLW0 = EUSCI_A_CTLW0_SSEL__SMCLK // BRCLK = SMCLK
                       | EUSCI_A_CTLW0_SWRST;    // stays in reset
 
-    // Baud rate 19200 @ 12 MHz with oversampling (derivation in uart_drv.h).
-    EUSCI_A0->BRW = UART_UCBR_VALUE;                                // UCBRx = 39
-    EUSCI_A0->MCTLW = (UART_UCBRS_VALUE << EUSCI_A_MCTLW_BRS_OFS)   // UCBRSx
-                      | (UART_UCBRF_VALUE << EUSCI_A_MCTLW_BRF_OFS) // UCBRFx
-                      | EUSCI_A_MCTLW_OS16;                         // UCOS16 = 1
+    // Oversampling mode (UCOS16=1): UCBRx = N/16, UCBRFx = N%16 (see uart_drv.h).
+    EUSCI_A0->BRW = (uint16_t)(n / 16U);
+    EUSCI_A0->MCTLW = ((n % 16U) << EUSCI_A_MCTLW_BRF_OFS) // UCBRFx
+                      | EUSCI_A_MCTLW_OS16;                 // UCOS16 = 1
 
     // Release the reset; the module now runs with the config above.
     EUSCI_A0->CTLW0 &= ~EUSCI_A_CTLW0_SWRST;
@@ -98,5 +99,10 @@ char uart_receive_char(void)
     {
     }
 
+    return uart_get_rx_byte();
+}
+
+char uart_get_rx_byte(void)
+{
     return (char)EUSCI_A0->RXBUF; // reading RXBUF clears UCRXIFG
 }

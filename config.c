@@ -54,13 +54,21 @@ static void cmd_set_temp_max(const char *value_str)
 
     if (!parse_uint(value_str, &value))
     {
-        uart_send_string("ERROR: invalid value\r\n");
+        uart_send_string("ERROR: \"");
+        uart_send_string(value_str);
+        uart_send_string("\" is invalid\r\n");
         return;
     }
 
     if (value < TEMP_MAX_LOWER_LIMIT || value > TEMP_MAX_UPPER_LIMIT)
     {
-        uart_send_string("ERROR: out of range\r\n");
+        uart_send_string("ERROR: \"");
+        uart_send_string(value_str);
+        uart_send_string("\" is out of range (");
+        uart_send_uint(TEMP_MAX_LOWER_LIMIT);
+        uart_send_string(" - ");
+        uart_send_uint(TEMP_MAX_UPPER_LIMIT);
+        uart_send_string(")\r\n");
         return;
     }
 
