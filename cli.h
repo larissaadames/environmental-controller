@@ -6,6 +6,8 @@
 // Max line length including '\0'. Longer lines are truncated.
 #define CLI_BUFFER_SIZE 32
 
+void cli_init(void);
+
 // Enqueue one received byte. Call from the UART RX ISR (fast, non-blocking).
 void cli_rx_byte(char c);
 

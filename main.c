@@ -14,6 +14,7 @@ void main(void)
     CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_12);
 
     uart_init(19200);
+    cli_init();
     config_init();
     ac_init();
     timer_init(TIMER_1, 10000); // 10s
