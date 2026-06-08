@@ -5,6 +5,7 @@
 #include "config.h"
 #include "timer_drv.h"
 #include "ac_drv.h"
+#include "led_drv.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -23,6 +24,7 @@ void main(void)
     cli_init();
     config_init();
     ac_init();
+    led_init();
     timer_init(TIMER_1, 10000); // 10s
 
     // IRQs
@@ -42,7 +44,7 @@ void main(void)
         if (s_sensor_tick)
         {
             s_sensor_tick = false;
-            handle_sensor_tick();
+            handler_sensor_tick();
         }
     }
 }
