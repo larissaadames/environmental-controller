@@ -31,18 +31,25 @@ bool cli_poll(void)
         if (c == '\r' || c == '\n')
         {
             if (s_len == 0)
+            {
                 continue; // skip empty lines (e.g. the LF of a CR+LF pair)
+            }
+
             uart_send_string("\r\n");
             s_buf[s_len] = '\0';
             s_ready = true;
+            s_len = 0;
         }
         else
         {
             uart_send_char(c); // echo
             if (s_len < (CLI_BUFFER_SIZE - 1))
+            {
                 s_buf[s_len++] = c;
+            }
         }
     }
+
     return s_ready;
 }
 
@@ -51,8 +58,7 @@ const char *cli_get_line(void)
     return s_buf;
 }
 
-void cli_clear(void)
+void reset_ready(void)
 {
-    s_len = 0;
     s_ready = false;
 }

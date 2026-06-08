@@ -22,7 +22,7 @@ void uart_init(uint32_t baudrate)
     // Oversampling mode (UCOS16=1): UCBRx = N/16, UCBRFx = N%16 (see uart_drv.h).
     EUSCI_A0->BRW = (uint16_t)(n / 16U);
     EUSCI_A0->MCTLW = ((n % 16U) << EUSCI_A_MCTLW_BRF_OFS) // UCBRFx
-                      | EUSCI_A_MCTLW_OS16;                 // UCOS16 = 1
+                      | EUSCI_A_MCTLW_OS16;                // UCOS16 = 1
 
     // Release the reset; the module now runs with the config above.
     EUSCI_A0->CTLW0 &= ~EUSCI_A_CTLW0_SWRST;
@@ -70,7 +70,7 @@ void uart_send_string(const char *str)
 
 void uart_send_uint(uint16_t value)
 {
-    char tmp[5]; // 16-bit value is at most 5 digits (65535)
+    char tmp[10]; // 32-bit value is at most 10 digits (4294967295)
     int i = 0;
 
     if (value == 0)

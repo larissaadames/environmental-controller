@@ -6,30 +6,22 @@
 #include "timer_drv.h"
 #include "ac_drv.h"
 #include "led_drv.h"
-#include <stdlib.h>
+#include "temp_sensor.h"
+#include "light_sensor.h"
+#include "sys_config.h"
 #include <stdbool.h>
 
 static volatile bool s_sensor_tick = false;
 
-void handler_sensor_tick();
+static void handler_sensor_tick(void);
+static void i2c_init(void);
+static void system_init(void);
 
 void main(void)
 {
-	// Setup
     WDTCTL = WDTPW | WDTHOLD; // Stop the watchdog timer
-    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_12);
 
-    // INITs
-    uart_init(19200);
-    cli_init();
-    config_init();
-    ac_init();
-    led_init();
-    timer_init(TIMER_1, 10000); // 10s
-
-    // IRQs
-    uart_enable_rx_interrupt();
-    timer_enable_interrupt(TIMER_1);
+    system_init();
 
     uart_send_string("System ready\r\n");
 
@@ -38,7 +30,7 @@ void main(void)
         if (cli_poll())
         {
             config_process_line(cli_get_line());
-            cli_clear();
+            reset_ready();
         }
 
         if (s_sensor_tick)
@@ -63,18 +55,20 @@ void T32_INT1_IRQHandler(void)
     s_sensor_tick = true;
 }
 
-void handler_sensor_tick()
+static void handler_sensor_tick(void)
 {
-    // TODO: Get temperature
-    int temp = rand() % 41; // 0 - 40
+    int16_t temp = temp_sensor_read();
+    uint32_t light = light_sensor_read();
     int max_temp = config_get_temp_max();
-
-    // TODO: Get luminosity
 
     // Debug
     uart_send_string("Temp: ");
     uart_send_uint((uint16_t)temp);
-    uart_send_string("C\r\n");
+    uart_send_string(" C\r\n");
+
+    uart_send_string("Light: ");
+    uart_send_uint(light);
+    uart_send_string(" centilux\r\n");
 
     if (temp <= max_temp && ac_is_on())
     {
@@ -84,4 +78,37 @@ void handler_sensor_tick()
     {
         ac_on();
     }
+}
+
+static void i2c_init(void)
+{
+    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P6, GPIO_PIN4, GPIO_PRIMARY_MODULE_FUNCTION);
+    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P6, GPIO_PIN5, GPIO_PRIMARY_MODULE_FUNCTION);
+
+    eUSCI_I2C_MasterConfig cfg;
+    cfg.selectClockSource = EUSCI_B_I2C_CLOCKSOURCE_SMCLK;
+    cfg.i2cClk = SMCLK_HZ;
+    cfg.dataRate = EUSCI_B_I2C_SET_DATA_RATE_100KBPS;
+    cfg.byteCounterThreshold = 0;
+    cfg.autoSTOPGeneration = EUSCI_B_I2C_NO_AUTO_STOP;
+
+    I2C_disableModule(EUSCI_B1_BASE);
+    I2C_initMaster(EUSCI_B1_BASE, &cfg);
+    I2C_enableModule(EUSCI_B1_BASE);
+}
+
+static void system_init(void)
+{
+    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_12);
+    i2c_init();
+    uart_init(19200);
+    cli_init();
+    config_init();
+    ac_init();
+    led_init();
+    timer_init(TIMER_1, 10000);
+    temp_sensor_init();
+    light_sensor_init();
+    uart_enable_rx_interrupt();
+    timer_enable_interrupt(TIMER_1);
 }

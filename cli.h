@@ -15,8 +15,8 @@ void cli_rx_byte(char c);
 // Drain buffered bytes, echo them, and assemble a line. Call from the main loop.
 // Returns true when a complete line is ready.
 bool cli_poll(void);
+void reset_ready(void);
 
 const char *cli_get_line(void); // the assembled '\0'-terminated line
-void cli_clear(void);           // free the buffer for the next line
 
 #endif /* CLI_H_ */
