@@ -1,10 +1,13 @@
 #include "config.h"
+#include "lamp_drv.h"
 #include "uart_drv.h"
 #include "string.h"
 
 #define TEMP_MAX_DEFAULT 25U
 #define TEMP_MAX_LOWER_LIMIT 0U
-#define TEMP_MAX_UPPER_LIMIT 60U
+#define TEMP_MAX_UPPER_LIMIT 100U
+
+#define LAMP_THRESHOLD_UPPER_LIMIT 65535U
 
 static uint8_t s_temp_max;
 
@@ -15,10 +18,12 @@ typedef struct
 } config_cmd_t;
 
 static void cmd_set_temp_max(const char *value_str);
+static void cmd_set_lamp_threshold(const char *value_str);
 
 static const config_cmd_t s_commands[] =
     {
-        {"TEMP_MAX", cmd_set_temp_max}};
+        {"TEMP_MAX", cmd_set_temp_max},
+        {"LAMP_THRESHOLD", cmd_set_lamp_threshold}};
 
 #define CONFIG_NUM_COMMANDS (sizeof(s_commands) / sizeof(s_commands[0]))
 
@@ -76,6 +81,35 @@ static void cmd_set_temp_max(const char *value_str)
 
     uart_send_string("OK: TEMP_MAX=");
     uart_send_uint(s_temp_max);
+    uart_send_string("\r\n");
+}
+
+static void cmd_set_lamp_threshold(const char *value_str)
+{
+    uint16_t value;
+
+    if (!parse_uint(value_str, &value))
+    {
+        uart_send_string("ERROR: \"");
+        uart_send_string(value_str);
+        uart_send_string("\" is invalid\r\n");
+        return;
+    }
+
+    if (value > LAMP_THRESHOLD_UPPER_LIMIT)
+    {
+        uart_send_string("ERROR: \"");
+        uart_send_string(value_str);
+        uart_send_string("\" is out of range (0 - ");
+        uart_send_uint(LAMP_THRESHOLD_UPPER_LIMIT);
+        uart_send_string(")\r\n");
+        return;
+    }
+
+    lamp_set_threshold((uint32_t)value);
+
+    uart_send_string("OK: LAMP_THRESHOLD=");
+    uart_send_uint(value);
     uart_send_string("\r\n");
 }
 

@@ -5,6 +5,7 @@
 #include "config.h"
 #include "timer_drv.h"
 #include "ac_drv.h"
+#include "lamp_drv.h"
 #include "led_drv.h"
 #include "temp_sensor.h"
 #include "light_sensor.h"
@@ -55,6 +56,12 @@ void T32_INT1_IRQHandler(void)
     s_sensor_tick = true;
 }
 
+void T32_INT2_IRQHandler(void)
+{
+    timer_clear_interrupt(TIMER_2);
+    lamp_tick();
+}
+
 static void handler_sensor_tick(void)
 {
     int16_t temp = temp_sensor_read();
@@ -77,6 +84,12 @@ static void handler_sensor_tick(void)
     else if (temp > max_temp && !ac_is_on())
     {
         ac_on();
+    }
+
+    bool real_lamp_is_on = light >= lamp_get_threshold();
+    if (real_lamp_is_on != lamp_is_on())
+    {
+        lamp_toggle();
     }
 }
 
@@ -105,10 +118,13 @@ static void system_init(void)
     cli_init();
     config_init();
     ac_init();
+    lamp_init();
     led_init();
     timer_init(TIMER_1, 10000);
+    timer_init(TIMER_2, 1000);
     temp_sensor_init();
     light_sensor_init();
     uart_enable_rx_interrupt();
     timer_enable_interrupt(TIMER_1);
+    timer_enable_interrupt(TIMER_2);
 }
