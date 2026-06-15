@@ -66,7 +66,10 @@ static void cmd_set_temp_max(const char *value_str)
         return;
     }
 
+#pragma diag_push
+#pragma diag_suppress 188
     if (value < TEMP_MAX_LOWER_LIMIT || value > TEMP_MAX_UPPER_LIMIT)
+#pragma diag_pop
     {
         uart_send_string("ERROR: \"");
         uart_send_string(value_str);

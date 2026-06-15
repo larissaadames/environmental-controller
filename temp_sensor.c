@@ -11,6 +11,12 @@ void temp_sensor_init(void)
     I2C_setSlaveAddress(EUSCI_B1_BASE, SENSOR_I2C_ADDRESS);
     I2C_setMode(EUSCI_B1_BASE, EUSCI_B_I2C_TRANSMIT_MODE);
 
+    // Wait for any pending STOP from a previous transfer to finish, otherwise
+    // this config write can be lost depending on init order.
+    I2C_clearInterruptFlag(EUSCI_B1_BASE, EUSCI_B_I2C_TRANSMIT_INTERRUPT0);
+    while (I2C_isBusBusy(EUSCI_B1_BASE))
+        ;
+
     // MOD[14:12]=111 continuous conversion | CR[11:9]=010 -> 1 conv/sec
     uint16_t config = (0x7 << 12) | (0x2 << 9);
 
