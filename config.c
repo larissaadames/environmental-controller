@@ -1,6 +1,7 @@
 #include "config.h"
 #include "lamp_drv.h"
 #include "uart_drv.h"
+#include "log.h"
 #include "string.h"
 
 #define TEMP_MAX_DEFAULT 25U
@@ -128,6 +129,13 @@ void config_process_line(const char *line)
     const char *eq;
     uint16_t key_len;
     uint16_t i;
+
+    // Command without a value: dump the event log saved in flash.
+    if (strcmp(line, "LOGS") == 0)
+    {
+        log_dump();
+        return;
+    }
 
     eq = strchr(line, '=');
     if (eq == 0)

@@ -9,6 +9,8 @@
 #include "led_drv.h"
 #include "temp_sensor.h"
 #include "light_sensor.h"
+#include "rtc_drv.h"
+#include "log.h"
 #include "sys_config.h"
 #include <stdbool.h>
 
@@ -124,6 +126,8 @@ static void system_init(void)
     timer_init(TIMER_2, 1000);
     temp_sensor_init();
     light_sensor_init();
+    rtc_init();
+    log_init();
     uart_enable_rx_interrupt();
     timer_enable_interrupt(TIMER_1);
     timer_enable_interrupt(TIMER_2);

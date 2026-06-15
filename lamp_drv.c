@@ -1,6 +1,7 @@
 #include "lamp_drv.h"
 #include "uart_drv.h"
 #include "led_drv.h"
+#include "log.h"
 
 #define LAMP_THRESHOLD_DEFAULT 3000U // 30 lux
 #define LAMP_LED_TICKS 5U            // 5 x 1s = 5s
@@ -21,10 +22,12 @@ void lamp_toggle(void)
     if (s_on)
     {
         uart_send_string("Lampada acessa\r\n");
+        log_event(LOG_LAMP_ON);
     }
     else
     {
         uart_send_string("Lampada apagada\r\n");
+        log_event(LOG_LAMP_OFF);
     }
     led_on(LED_GREEN);
     s_led_ticks = LAMP_LED_TICKS;
