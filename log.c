@@ -218,3 +218,17 @@ void log_dump(void)
     uart_send_uint((uint16_t)count);
     uart_send_string(" evento(s) ---\r\n");
 }
+
+void log_clear(void)
+{
+    uint32_t s;
+    for (s = 0; s < LOG_NUM_SECTORS; s++)
+    {
+        FlashCtl_eraseSector(LOG_BASE_ADDR + s * LOG_SECTOR_SIZE);
+    }
+
+    s_next_seq = 0;
+    s_write_index = 0;
+
+    uart_send_string("OK: logs cleared\r\n");
+}

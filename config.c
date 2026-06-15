@@ -12,6 +12,7 @@
 
 static uint8_t s_temp_max;
 
+// Commands of the form "KEY=value".
 typedef struct
 {
     const char *key;
@@ -27,6 +28,20 @@ static const config_cmd_t s_commands[] =
         {"LAMP_THRESHOLD", cmd_set_lamp_threshold}};
 
 #define CONFIG_NUM_COMMANDS (sizeof(s_commands) / sizeof(s_commands[0]))
+
+// Commands without a value (no '=' on the line).
+typedef struct
+{
+    const char *key;
+    void (*handler)(void);
+} config_simple_cmd_t;
+
+static const config_simple_cmd_t s_simple_commands[] =
+    {
+        {"LOGS", log_dump},
+        {"CLEAR_LOGS", log_clear}};
+
+#define CONFIG_NUM_SIMPLE_COMMANDS (sizeof(s_simple_commands) / sizeof(s_simple_commands[0]))
 
 // Decimal string -> unsigned. Returns 0 if empty, non-digit, or out of uint16.
 static int parse_uint(const char *s, uint16_t *out)
@@ -133,29 +148,33 @@ void config_process_line(const char *line)
     uint16_t key_len;
     uint16_t i;
 
-    // Command without a value: dump the event log saved in flash.
-    if (strcmp(line, "LOGS") == 0)
-    {
-        log_dump();
-        return;
-    }
-
     eq = strchr(line, '=');
+
     if (eq == 0)
     {
-        uart_send_string("ERROR: format (use KEY=value)\r\n");
-        return;
-    }
-
-    key_len = (uint16_t)(eq - line);
-
-    for (i = 0; i < CONFIG_NUM_COMMANDS; i++)
-    {
-        if (strlen(s_commands[i].key) == key_len &&
-            strncmp(line, s_commands[i].key, key_len) == 0)
+        // No '=': look the whole line up in the value-less command table.
+        for (i = 0; i < CONFIG_NUM_SIMPLE_COMMANDS; i++)
         {
-            s_commands[i].handler(eq + 1); // skips '='
-            return;
+            if (strcmp(line, s_simple_commands[i].key) == 0)
+            {
+                s_simple_commands[i].handler();
+                return;
+            }
+        }
+    }
+    else
+    {
+        // "KEY=value": match the part before '=' against the KEY=value table.
+        key_len = (uint16_t)(eq - line);
+
+        for (i = 0; i < CONFIG_NUM_COMMANDS; i++)
+        {
+            if (strlen(s_commands[i].key) == key_len &&
+                strncmp(line, s_commands[i].key, key_len) == 0)
+            {
+                s_commands[i].handler(eq + 1); // skips '='
+                return;
+            }
         }
     }
 

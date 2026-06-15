@@ -23,4 +23,7 @@ void log_event(log_event_t type);
 // Print every stored event over the UART, oldest first.
 void log_dump(void);
 
+// Erase all stored events and reset the log to empty.
+void log_clear(void);
+
 #endif /* LOG_H_ */
