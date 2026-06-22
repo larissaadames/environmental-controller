@@ -2,6 +2,8 @@
 #include "rtc_drv.h"
 #include "uart_drv.h"
 #include "driverlib.h"
+#include "lcd_drv.h"
+#include <string.h>
 
 // ---------------------------------------------------------------------------
 // Flash region: the top 4 sectors of bank 1 (0x3C000 - 0x3FFFF). They are
@@ -84,6 +86,24 @@ void log_init(void)
     s_write_index = s_next_seq % LOG_TOTAL_RECORDS;
 }
 
+// The same message that was sent over the UART when the event happened.
+static const char *type_message(uint8_t type)
+{
+    switch (type)
+    {
+    case LOG_AC_ON:
+        return "Ar-condicionado ligado";
+    case LOG_AC_OFF:
+        return "Ar-condicionado desligado";
+    case LOG_LAMP_ON:
+        return "Lampada acessa";
+    case LOG_LAMP_OFF:
+        return "Lampada apagada";
+    default:
+        return "Evento desconhecido";
+    }
+}
+
 void log_event(log_event_t type)
 {
     rtc_datetime_t now = rtc_now();
@@ -114,24 +134,17 @@ void log_event(log_event_t type)
 
     s_next_seq++;
     s_write_index = s_next_seq % LOG_TOTAL_RECORDS;
-}
 
-// The same message that was sent over the UART when the event happened.
-static const char *type_message(uint8_t type)
-{
-    switch (type)
-    {
-    case LOG_AC_ON:
-        return "Ar-condicionado ligado";
-    case LOG_AC_OFF:
-        return "Ar-condicionado desligado";
-    case LOG_LAMP_ON:
-        return "Lampada acessa";
-    case LOG_LAMP_OFF:
-        return "Lampada apagada";
-    default:
-        return "Evento desconhecido";
-    }
+    const char *message = type_message((uint8_t)type);
+
+    char buffer[256];
+    strncpy(buffer, message, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+
+    char *line1 =  strtok(buffer, " ");
+    char *line2 =  strtok(NULL, " ");
+
+    lcd_show_message(line1, line2);
 }
 
 // Send a value as exactly two zero-padded decimal digits (00-99).
