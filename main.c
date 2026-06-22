@@ -6,6 +6,7 @@
 #include "timer_drv.h"
 #include "ac_drv.h"
 #include "lamp_drv.h"
+#include "lcd_drv.h"
 #include "led_drv.h"
 #include "temp_sensor.h"
 #include "light_sensor.h"
@@ -121,6 +122,7 @@ static void system_init(void)
     config_init();
     ac_init();
     lamp_init();
+    lcd_init();
     led_init();
     timer_init(TIMER_1, 10000);
     timer_init(TIMER_2, 1000);
