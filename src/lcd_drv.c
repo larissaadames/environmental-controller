@@ -3,6 +3,7 @@
 #include <grlib.h>
 #include "Crystalfontz128x128_ST7735.h"
 #include "lamp_drv.h"
+#include "log.h"
 #include <string.h>
 
 static Graphics_Context s_context;
@@ -32,9 +33,9 @@ static void redraw(void)
 {
     Graphics_clearDisplay(&s_context);
     Graphics_drawStringCentered(&s_context, (int8_t *)s_last_line1,
-                                 AUTO_STRING_LENGTH, 64, 48, OPAQUE_TEXT);
+                                AUTO_STRING_LENGTH, 64, 48, OPAQUE_TEXT);
     Graphics_drawStringCentered(&s_context, (int8_t *)s_last_line2,
-                                 AUTO_STRING_LENGTH, 64, 68, OPAQUE_TEXT);
+                                AUTO_STRING_LENGTH, 64, 68, OPAQUE_TEXT);
 }
 
 void lcd_init(void)
@@ -42,11 +43,12 @@ void lcd_init(void)
     Crystalfontz128x128_Init();
     Crystalfontz128x128_SetOrientation(LCD_ORIENTATION_UP);
 
-	Graphics_initContext(&s_context, &g_sCrystalfontz128x128);
+    Graphics_initContext(&s_context, &g_sCrystalfontz128x128);
     Graphics_setFont(&s_context, &g_sFontFixed6x8);
 
     apply_theme(lamp_is_on());
     Graphics_clearDisplay(&s_context);
+    log_show_last();
 }
 
 void lcd_set_theme(bool lights_on)

@@ -104,6 +104,22 @@ static const char *type_message(uint8_t type)
     }
 }
 
+// Draw an event on the LCD, splitting its message into two centered lines at
+// the first space (e.g. "Ar-condicionado desligado").
+static void show_event_on_lcd(uint8_t type)
+{
+    const char *message = type_message(type);
+
+    char buffer[256];
+    strncpy(buffer, message, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+
+    char *line1 = strtok(buffer, " ");
+    char *line2 = strtok(NULL, " ");
+
+    lcd_show_message(line1, line2);
+}
+
 void log_event(log_event_t type)
 {
     rtc_datetime_t now = rtc_now();
@@ -135,16 +151,33 @@ void log_event(log_event_t type)
     s_next_seq++;
     s_write_index = s_next_seq % LOG_TOTAL_RECORDS;
 
-    const char *message = type_message((uint8_t)type);
+    show_event_on_lcd((uint8_t)type);
+}
 
-    char buffer[256];
-    strncpy(buffer, message, sizeof(buffer) - 1);
-    buffer[sizeof(buffer) - 1] = '\0';
+void log_show_last(void)
+{
+    uint32_t i;
+    uint32_t max_seq = 0;
+    uint32_t last_index = 0;
+    bool found = false;
 
-    char *line1 =  strtok(buffer, " ");
-    char *line2 =  strtok(NULL, " ");
+    for (i = 0; i < LOG_TOTAL_RECORDS; i++)
+    {
+        uint32_t seq = slot_ptr(i)->seq;
+        if (seq != LOG_SEQ_EMPTY && (!found || seq > max_seq))
+        {
+            max_seq = seq;
+            last_index = i;
+            found = true;
+        }
+    }
 
-    lcd_show_message(line1, line2);
+    if (!found)
+    {
+        return;
+    }
+
+    show_event_on_lcd(slot_ptr(last_index)->type);
 }
 
 // Send a value as exactly two zero-padded decimal digits (00-99).
