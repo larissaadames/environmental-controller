@@ -5,14 +5,12 @@
 #include "string.h"
 
 #define TEMP_MAX_DEFAULT 25U
-#define TEMP_MAX_LOWER_LIMIT 0U
 #define TEMP_MAX_UPPER_LIMIT 100U
 
 #define LAMP_THRESHOLD_UPPER_LIMIT 65535U
 
 static uint8_t s_temp_max;
 
-// Commands of the form "KEY=value".
 typedef struct
 {
     const char *key;
@@ -29,7 +27,6 @@ static const config_cmd_t s_commands[] =
 
 #define CONFIG_NUM_COMMANDS (sizeof(s_commands) / sizeof(s_commands[0]))
 
-// Commands without a value (no '=' on the line).
 typedef struct
 {
     const char *key;
@@ -43,7 +40,6 @@ static const config_simple_cmd_t s_simple_commands[] =
 
 #define CONFIG_NUM_SIMPLE_COMMANDS (sizeof(s_simple_commands) / sizeof(s_simple_commands[0]))
 
-// Decimal string -> unsigned. Returns 0 if empty, non-digit, or out of uint16.
 static int parse_uint(const char *s, uint16_t *out)
 {
     uint16_t value = 0;
@@ -81,15 +77,12 @@ static void cmd_set_temp_max(const char *value_str)
         return;
     }
 
-#pragma diag_push
-#pragma diag_suppress 188
-    if (value < TEMP_MAX_LOWER_LIMIT || value > TEMP_MAX_UPPER_LIMIT)
-#pragma diag_pop
+    if (value || value > TEMP_MAX_UPPER_LIMIT)
     {
         uart_send_string("ERROR: \"");
         uart_send_string(value_str);
         uart_send_string("\" is out of range (");
-        uart_send_uint(TEMP_MAX_LOWER_LIMIT);
+        uart_send_uint(0);
         uart_send_string(" - ");
         uart_send_uint(TEMP_MAX_UPPER_LIMIT);
         uart_send_string(")\r\n");
@@ -152,7 +145,6 @@ void config_process_line(const char *line)
 
     if (eq == 0)
     {
-        // No '=': look the whole line up in the value-less command table.
         for (i = 0; i < CONFIG_NUM_SIMPLE_COMMANDS; i++)
         {
             if (strcmp(line, s_simple_commands[i].key) == 0)
@@ -164,7 +156,6 @@ void config_process_line(const char *line)
     }
     else
     {
-        // "KEY=value": match the part before '=' against the KEY=value table.
         key_len = (uint16_t)(eq - line);
 
         for (i = 0; i < CONFIG_NUM_COMMANDS; i++)

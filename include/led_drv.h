@@ -8,7 +8,6 @@ typedef enum
     LED_BLUE = 2
 } led_color_t;
 
-// Configure LED pins as GPIO outputs, all off.
 void led_init(void);
 
 void led_on(led_color_t color);

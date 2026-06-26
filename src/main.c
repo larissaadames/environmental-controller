@@ -122,7 +122,7 @@ static void system_init(void)
     config_init();
     ac_init();
     lamp_init();
-    lcd_init();
+    lcd_init(lamp_is_on() ? light_mode : dark_mode);
     led_init();
     timer_init(TIMER_1, 10000);
     timer_init(TIMER_2, 1000);

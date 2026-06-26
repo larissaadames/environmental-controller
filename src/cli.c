@@ -32,7 +32,7 @@ bool cli_poll(void)
         {
             if (s_len == 0)
             {
-                continue; // skip empty lines (e.g. the LF of a CR+LF pair)
+                continue;
             }
 
             uart_send_string("\r\n");

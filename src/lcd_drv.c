@@ -10,25 +10,33 @@ static Graphics_Context s_context;
 static char s_last_line1[24] = "";
 static char s_last_line2[24] = "";
 
-// Applies the foreground/background pair for the given lamp state without
-// touching whatever is already drawn on screen.
-static void apply_theme(bool lights_on)
+// Black characters on a white background.
+static void apply_light_mode(void)
 {
-    if (lights_on)
+    Graphics_setForegroundColor(&s_context, GRAPHICS_COLOR_BLACK);
+    Graphics_setBackgroundColor(&s_context, GRAPHICS_COLOR_WHITE);
+}
+
+// White characters on a black background.
+static void apply_dark_mode(void)
+{
+    Graphics_setForegroundColor(&s_context, GRAPHICS_COLOR_WHITE);
+    Graphics_setBackgroundColor(&s_context, GRAPHICS_COLOR_BLACK);
+}
+
+static void apply_theme(lcd_theme_t theme)
+{
+    switch (theme)
     {
-        // Luzes acesas: caracteres pretos em fundo branco
-        Graphics_setForegroundColor(&s_context, GRAPHICS_COLOR_BLACK);
-        Graphics_setBackgroundColor(&s_context, GRAPHICS_COLOR_WHITE);
-    }
-    else
-    {
-        // Luzes apagadas: caracteres brancos em fundo preto
-        Graphics_setForegroundColor(&s_context, GRAPHICS_COLOR_WHITE);
-        Graphics_setBackgroundColor(&s_context, GRAPHICS_COLOR_BLACK);
+    case light_mode:
+        apply_light_mode();
+        break;
+    case dark_mode:
+        apply_dark_mode();
+        break;
     }
 }
 
-// Redraws the last message with whatever theme is currently active.
 static void redraw(void)
 {
     Graphics_clearDisplay(&s_context);
@@ -38,7 +46,7 @@ static void redraw(void)
                                 AUTO_STRING_LENGTH, 64, 68, OPAQUE_TEXT);
 }
 
-void lcd_init(void)
+void lcd_init(lcd_theme_t initial_theme)
 {
     Crystalfontz128x128_Init();
     Crystalfontz128x128_SetOrientation(LCD_ORIENTATION_UP);
@@ -46,14 +54,14 @@ void lcd_init(void)
     Graphics_initContext(&s_context, &g_sCrystalfontz128x128);
     Graphics_setFont(&s_context, &g_sFontFixed6x8);
 
-    apply_theme(lamp_is_on());
+    apply_theme(initial_theme);
     Graphics_clearDisplay(&s_context);
     log_show_last();
 }
 
-void lcd_set_theme(bool lights_on)
+void lcd_set_theme(lcd_theme_t theme)
 {
-    apply_theme(lights_on);
+    apply_theme(theme);
     redraw();
 }
 

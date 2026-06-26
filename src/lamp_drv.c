@@ -24,13 +24,13 @@ void lamp_toggle(void)
     {
         uart_send_string("Lampada acessa\r\n");
         log_event(LOG_LAMP_ON);
-        lcd_set_theme(true);
+        lcd_set_theme(light_mode);
     }
     else
     {
         uart_send_string("Lampada apagada\r\n");
         log_event(LOG_LAMP_OFF);
-        lcd_set_theme(false);
+        lcd_set_theme(dark_mode);
     }
     led_on(LED_GREEN);
     s_led_ticks = LAMP_LED_TICKS;
