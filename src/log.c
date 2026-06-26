@@ -277,4 +277,6 @@ void log_clear(void)
     s_write_index = 0;
 
     uart_send_string("OK: logs cleared\r\n");
+
+    lcd_clear_screen();
 }

@@ -67,3 +67,8 @@ void lcd_show_message(const char *line1, const char *line2)
 
     redraw();
 }
+
+void lcd_clear_screen(void)
+{
+    Graphics_clearDisplay(&s_context);
+}
