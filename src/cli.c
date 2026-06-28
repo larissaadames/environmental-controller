@@ -6,6 +6,9 @@
 static volatile uint8_t s_fifo_data[RX_FIFO_SIZE];
 static Queue s_rx;
 
+#define ASCII_BS 0x08  // Ctrl-H, sent by some terminals for backspace
+#define ASCII_DEL 0x7F // sent by most terminals for backspace
+
 // Line being assembled, owned by the main loop.
 static char s_buf[CLI_BUFFER_SIZE];
 static uint8_t s_len;
@@ -40,13 +43,19 @@ bool cli_poll(void)
             s_ready = true;
             s_len = 0;
         }
-        else
+        else if (c == ASCII_BS || c == ASCII_DEL)
         {
-            uart_send_char(c); // echo
-            if (s_len < (CLI_BUFFER_SIZE - 1))
+            if (s_len > 0)
             {
-                s_buf[s_len++] = c;
+                s_len--;
+                // erase the last char on the terminal
+                uart_send_string("\b \b");
             }
+        }
+        else if (s_len < (CLI_BUFFER_SIZE - 1))
+        {
+            s_buf[s_len++] = c;
+            uart_send_char(c);
         }
     }
 
