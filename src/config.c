@@ -118,7 +118,7 @@ static void cmd_set_temp_max(const char *value_str)
         return;
     }
 
-    if (value || value > TEMP_MAX_UPPER_LIMIT)
+    if (value > TEMP_MAX_UPPER_LIMIT)
     {
         uart_send_string("ERROR: \"");
         uart_send_string(value_str);
