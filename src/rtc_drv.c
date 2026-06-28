@@ -1,6 +1,7 @@
 #include "rtc_drv.h"
 #include "driverlib.h"
 #include "msp.h"
+#include "uart_drv.h"
 
 static bool is_leap_year(uint16_t year)
 {
@@ -42,25 +43,13 @@ void rtc_init(void)
     // LaunchPad does not populate one by default).
     CS_initClockSignal(CS_BCLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_1);
 
-    // A running RTC (HOLD clear) means a previous boot already started it; keep
-    // counting from where it left off instead of resetting the calendar.
-    if (!BITBAND_PERI(RTC_C->CTL13, RTC_C_CTL13_HOLD_OFS))
+    if (BITBAND_PERI(RTC_C->CTL13, RTC_C_CTL13_HOLD_OFS))
     {
-        return;
+        uart_send_string("Resetting RTC, initializing to 12:00:00 on 28/06/2026\r\n");
+        const RTC_C_Calendar start = {0, 0, 12, 0, 28, 6, 2026};
+        RTC_C_initCalendar(&start, RTC_C_FORMAT_BINARY);
     }
 
-    const RTC_C_Calendar start =
-        {
-            0,   // seconds
-            0,   // minutes
-            12,  // hours
-            0,   // dayOfWeek
-            28,  // dayOfmonth
-            6,   // month
-            2026 // year
-        };
-
-    RTC_C_initCalendar(&start, RTC_C_FORMAT_BINARY);
     RTC_C_startClock();
 }
 
