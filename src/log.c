@@ -92,20 +92,17 @@ static const char *type_message(uint8_t type)
     switch (type)
     {
     case LOG_AC_ON:
-        return "Ar-condicionado ligado";
+        return "Ar ligado";
     case LOG_AC_OFF:
-        return "Ar-condicionado desligado";
+        return "Ar desligado";
     case LOG_LAMP_ON:
-        return "Lampada acessa";
+        return "Luz acesa";
     case LOG_LAMP_OFF:
-        return "Lampada apagada";
+        return "Luz apagada";
     default:
         return "Evento desconhecido";
     }
 }
-
-// Draw an event on the LCD, splitting its message into two centered lines at
-// the first space (e.g. "Ar-condicionado desligado").
 static void show_event_on_lcd(uint8_t type)
 {
     const char *message = type_message(type);
