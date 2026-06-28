@@ -1,13 +1,15 @@
 #include "config.h"
 #include "lamp_drv.h"
 #include "uart_drv.h"
+#include "rtc_drv.h"
 #include "log.h"
 #include "string.h"
 
 #define TEMP_MAX_DEFAULT 25U
 #define TEMP_MAX_UPPER_LIMIT 100U
 
-#define LAMP_THRESHOLD_UPPER_LIMIT 65535U
+// Maximum illuminance the OPT3001 reports, in centilux (mantissa 4095 * 2^11).
+#define LAMP_THRESHOLD_UPPER_LIMIT 8386560U
 
 static uint8_t s_temp_max;
 
@@ -19,11 +21,13 @@ typedef struct
 
 static void cmd_set_temp_max(const char *value_str);
 static void cmd_set_lamp_threshold(const char *value_str);
+static void cmd_set_time(const char *value_str);
 
 static const config_cmd_t s_commands[] =
     {
         {"TEMP_MAX", cmd_set_temp_max},
-        {"LAMP_THRESHOLD", cmd_set_lamp_threshold}};
+        {"LAMP_THRESHOLD", cmd_set_lamp_threshold},
+        {"TIME", cmd_set_time}};
 
 #define CONFIG_NUM_COMMANDS (sizeof(s_commands) / sizeof(s_commands[0]))
 
@@ -40,18 +44,25 @@ static const config_simple_cmd_t s_simple_commands[] =
 
 #define CONFIG_NUM_SIMPLE_COMMANDS (sizeof(s_simple_commands) / sizeof(s_simple_commands[0]))
 
-static int parse_uint(const char *s, uint16_t *out)
+static int parse_uint(const char *s, uint32_t *out)
 {
-    uint16_t value = 0;
+    uint32_t value = 0;
     int digits = 0;
 
     while (*s != '\0')
     {
-        if (*s < '0' || *s > '9' || value > 6553U)
+        if (*s < '0' || *s > '9')
         {
             return 0;
         }
-        value = (uint16_t)(value * 10U + (uint16_t)(*s - '0'));
+
+        uint32_t digit = (uint32_t)(*s - '0');
+        if (value > (0xFFFFFFFFU - digit) / 10U)
+        {
+            return 0; // would overflow uint32
+        }
+
+        value = value * 10U + digit;
         digits++;
         s++;
     }
@@ -65,9 +76,39 @@ static int parse_uint(const char *s, uint16_t *out)
     return 1;
 }
 
+static int parse_digits(const char **s, uint8_t count, uint16_t *out)
+{
+    uint16_t value = 0;
+    uint8_t i;
+
+    for (i = 0; i < count; i++)
+    {
+        char c = (*s)[i];
+        if (c < '0' || c > '9')
+        {
+            return 0;
+        }
+        value = (uint16_t)(value * 10U + (uint16_t)(c - '0'));
+    }
+
+    *s += count;
+    *out = value;
+    return 1;
+}
+
+static int expect_char(const char **s, char c)
+{
+    if (**s != c)
+    {
+        return 0;
+    }
+    (*s)++;
+    return 1;
+}
+
 static void cmd_set_temp_max(const char *value_str)
 {
-    uint16_t value;
+    uint32_t value;
 
     if (!parse_uint(value_str, &value))
     {
@@ -98,7 +139,7 @@ static void cmd_set_temp_max(const char *value_str)
 
 static void cmd_set_lamp_threshold(const char *value_str)
 {
-    uint16_t value;
+    uint32_t value;
 
     if (!parse_uint(value_str, &value))
     {
@@ -118,10 +159,48 @@ static void cmd_set_lamp_threshold(const char *value_str)
         return;
     }
 
-    lamp_set_threshold((uint32_t)value);
+    lamp_set_threshold(value);
 
     uart_send_string("OK: LAMP_THRESHOLD=");
     uart_send_uint(value);
+    uart_send_string("\r\n");
+}
+
+// Expects "YYYY-MM-DD HH:MM:SS".
+static void cmd_set_time(const char *value_str)
+{
+    const char *p = value_str;
+    uint16_t year, month, day, hour, minute, second;
+
+    if (!parse_digits(&p, 4, &year) || !expect_char(&p, '-') ||
+        !parse_digits(&p, 2, &month) || !expect_char(&p, '-') ||
+        !parse_digits(&p, 2, &day) || !expect_char(&p, ' ') ||
+        !parse_digits(&p, 2, &hour) || !expect_char(&p, ':') ||
+        !parse_digits(&p, 2, &minute) || !expect_char(&p, ':') ||
+        !parse_digits(&p, 2, &second) || *p != '\0')
+    {
+        uart_send_string("ERROR: invalid format (expected YYYY-MM-DD HH:MM:SS)\r\n");
+        return;
+    }
+
+    rtc_datetime_t dt;
+    dt.year = year;
+    dt.month = (uint8_t)month;
+    dt.day = (uint8_t)day;
+    dt.hours = (uint8_t)hour;
+    dt.minutes = (uint8_t)minute;
+    dt.seconds = (uint8_t)second;
+
+    if (!rtc_set(&dt))
+    {
+        uart_send_string("ERROR: \"");
+        uart_send_string(value_str);
+        uart_send_string("\" is not a valid date/time\r\n");
+        return;
+    }
+
+    uart_send_string("OK: TIME=");
+    uart_send_string(value_str);
     uart_send_string("\r\n");
 }
 

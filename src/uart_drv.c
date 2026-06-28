@@ -68,7 +68,7 @@ void uart_send_string(const char *str)
     }
 }
 
-void uart_send_uint(uint16_t value)
+void uart_send_uint(uint32_t value)
 {
     char tmp[10]; // 32-bit value is at most 10 digits (4294967295)
     int i = 0;

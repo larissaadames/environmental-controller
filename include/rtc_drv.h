@@ -2,6 +2,7 @@
 #define RTC_DRV_H_
 
 #include "stdint.h"
+#include <stdbool.h>
 
 typedef struct
 {
@@ -16,5 +17,7 @@ typedef struct
 void rtc_init(void);
 
 rtc_datetime_t rtc_now(void);
+
+bool rtc_set(const rtc_datetime_t *dt);
 
 #endif /* RTC_DRV_H_ */
